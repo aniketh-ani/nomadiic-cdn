@@ -4161,7 +4161,7 @@ void main() {
 .nst-head h1{margin:0;font:400 clamp(34px,4.3vw,62px)/1.02 "Instrument Serif",Georgia,serif;letter-spacing:-.005em;text-shadow:0 2px 30px rgba(5,8,16,.55)}
 .nst-head h1 em{font-style:italic;color:#f4d9b0}
 @media (max-width:640px){.nst-head{left:24px;right:24px;top:18%}}
-.nst-snd{position:absolute;right:28px;top:22px;z-index:40;width:34px;height:34px;border-radius:50%;border:1px solid rgba(255,255,255,.35);display:grid;place-items:center;cursor:pointer;opacity:0;transition:opacity 1.2s ease, border-color .3s;background:none;padding:0}
+.nst-snd{position:absolute;right:164px;top:21px;z-index:40;width:34px;height:34px;border-radius:50%;border:1px solid rgba(255,255,255,.35);display:grid;place-items:center;cursor:pointer;opacity:0;transition:opacity 1.2s ease, border-color .3s;background:none;padding:0}
 .nst-snd.on{opacity:1}.nst-snd:hover{border-color:rgba(255,255,255,.85)}
 .nst-snd svg{width:14px;height:14px;stroke:#fff;fill:none;stroke-width:1.3}
 `,Vy="varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }",Wy=`
