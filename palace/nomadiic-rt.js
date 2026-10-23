@@ -4812,19 +4812,19 @@ void main(){
               cu += vec3(0.6, 0.9, 1.0) * pow(wn(vW.xz * 2.0 + sl * 4.0 + uTime * 0.3), 6.0) * 0.6 * win;   // caustic sparkle on the skin
               float du = length(vW - cameraPosition); cu = mix(cu, uFogCol, 1.0 - exp(-du * 0.03));
               gl_FragColor = vec4(cu, 1.0); return; }
-            vec3 R = reflect(-V, n); R.y = abs(R.y);
+            vec3 R = reflect(-V, n); R.y = max(abs(R.y), 0.2); R = normalize(R);   // never reflect the dark band under the sky photo's horizon: that made flat puddles
             float fr = 0.02 + 0.98 * pow(1.0 - max(dot(n, V), 0.0), 5.0);
             vec3 deep = vec3(0.008, 0.05, 0.085), shallow = vec3(0.08, 0.36, 0.38);
             vec3 body = mix(shallow, deep, smoothstep(0.3, 7.0, depth)) * (0.92 + 0.16 * smoothstep(0.0, 0.25, sl.y + sl.x * 0.3));   // light through the crests
             vec3 c = mix(body, skyCol(R), fr);
             vec3 SUN = normalize(vec3(0.2, 0.06, -1.0));
             c += vec3(1.0, 0.72, 0.45) * (pow(max(dot(R, SUN), 0.0), 900.0) * 18.0 + pow(max(dot(R, SUN), 0.0), 60.0) * 0.5);   // the sun's glitter path
-            float lace = smoothstep(0.55, 0.85, wn(vW.xz * 2.2 + vec2(uTime * 0.3, 0.0)) * 0.6 + wn(vW.xz * 7.0 - uTime * 0.5) * 0.4);
+            float lace = smoothstep(0.5, 0.95, wn(vW.xz * 2.2 + vec2(uTime * 0.3, 0.0)) * 0.6 + wn(vW.xz * 7.0 - uTime * 0.5) * 0.4);
             float run = 0.35 + 0.25 * sin(vW.x * 0.25 + uTime * 0.9) + 0.15 * sin(uTime * 0.37);
             float foam = (1.0 - smoothstep(0.0, run, depth)) * (0.45 + 0.55 * lace);
             foam += smoothstep(run, run + 0.6, depth) * (1.0 - smoothstep(run + 0.6, run + 1.6, depth)) * lace * 0.45;   // the broken lace behind the wave
-            foam += smoothstep(0.86, 1.0, vCrest) * smoothstep(-20.0, -6.0, vW.z) * lace * 0.5;
-            c = mix(c, vec3(0.82, 0.84, 0.88) * (0.6 + 0.4 * dot(n, vec3(0.0, 1.0, 0.0))), clamp(foam, 0.0, 1.0));
+            foam += smoothstep(0.9, 1.0, vCrest) * smoothstep(-14.0, -4.0, vW.z) * lace * 0.1;   // only a whisper of white on the crests near the shore
+            c = mix(c, vec3(0.74, 0.8, 0.84) * (0.6 + 0.4 * dot(n, vec3(0.0, 1.0, 0.0))), clamp(foam, 0.0, 1.0) * 0.85);
             float a = clamp(0.35 + depth * 0.9, 0.3, 0.96); a = max(a, foam);
             if (depth < -0.05) discard;
             float d = length(vW - cameraPosition); c = mix(c, uFogCol, (1.0 - exp(-d * uFogK)) * 0.55);
@@ -4869,7 +4869,7 @@ void main(){
     float gl = step(0.9975, fract(sin(dot(floor(vW * 9.0), vec3(12.9, 78.2, 37.7))) * 43758.5));
     c += vec3(0.85, 0.92, 1.0) * gl * pow(max(dot(reflect(-V, nd), uSunDir), 0.0), 2.0) * 2.5;
   }
-  else if (k < 2.0) { vec3 nd = N_rock(vW, n, 1.3); c = mix(D_rock(vW, n) * vec3(0.7, 0.78, 0.92) * L * 1.1 * relief(nd, n) + vec3(0.05, 0.06, 0.09), D_snow(vW, n) * L * 0.85, smoothstep(0.55, 0.85, nd.y)); }   // cold granite in moonlight   // granite, snow lying on its ledges
+  else if (k < 2.0) { vec3 nd = N_rock(vW, n, 1.3); c = mix(D_rock(vW, n) * vec3(0.7, 0.78, 0.92) * (L * 1.1 + 0.34) * relief(nd, n), D_snow(vW, n) * L * 0.85, smoothstep(0.55, 0.85, nd.y)); }   // cold granite in moonlight   // granite, snow lying on its ledges
   else if (k < 3.0) { vec3 nd = N_conc(vW, n, 1.0); c = D_conc(vW, n) * L * 1.15 * relief(nd, n); }       // brushed concrete
   else if (k < 4.0) discard;                                                                               // the glass is drawn live (see-through)
   else if (k < 5.0) c = vec3(0.04) * L + vec3(0.12, 0.13, 0.16) * fres;                                        // dark steel
@@ -5019,7 +5019,9 @@ vec3 curl(vec3 p){ float e = 0.1;
         void main(){
           vec3 n = vN; n = (dot(n, n) > 1e-8 && n == n) ? normalize(n) : vec3(0.0, 1.0, 0.0); vec3 L = lmDecode(texture2D(tLm, vUv).rgb, uK);
           #ifdef HALL
-            { float lum = dot(L, vec3(0.333)); L *= 0.85 / (1.0 + max(lum - 0.85, 0.0) * 1.4); }   // the stone right under each lamp baked hot: rolled off so nothing burns white
+            { float lum = dot(L, vec3(0.333)); L *= 0.85 / (1.0 + max(lum - 0.85, 0.0) * 1.4);   // the stone right under each lamp baked hot: rolled off, then warmed so it never rings blue
+              float l2 = dot(L, vec3(0.333)); L = mix(L, vec3(l2) * vec3(1.0, 0.93, 0.82), smoothstep(0.45, 0.8, lum) * 0.9);
+              L = max(L, vec3(0.30, 0.275, 0.24)); }   // no corner of the hall is ever a dark slab: a warm floor of ambient light   // the stone right under each lamp baked hot: rolled off so nothing burns white
           #else
             if (vW.z < -24.8 && vW.z > -55.5 && abs(vW.x) < 8.3 && vW.y > 5.6 && vW.y < 16.5) discard;
             if (abs(vW.x) < 1.4 && vW.y > 23.35 && (abs(vW.z + 20.7) < 1.6 || abs(vW.z + 59.3) < 1.6)) discard;   // the old ball on each apex   // outside pieces (the colonnade's basins) that poke through into the hall
@@ -5035,7 +5037,11 @@ vec3 curl(vec3 p){ float e = 0.1;
               // marble wall panels, each slab cut from a slightly different block, with fine joints
               vec2 pq = abs(n.x) > 0.5 ? vW.zy : vW.xy; vec2 cell = floor(pq / vec2(2.4, 1.6)); vec2 f = abs(fract(pq / vec2(2.4, 1.6)) - 0.5);
               float joint = smoothstep(0.488, 0.497, max(f.x, f.y));
-              alb = tri(vW + vec3(cell.x * 7.3, cell.y * 3.1, 0.0), n, 2.2); alb = clamp((alb - vec3(dot(alb, vec3(0.333)))) * 1.6 + (vec3(dot(alb, vec3(0.333))) - 0.72) * 2.4 + 0.72, 0.0, 1.2); alb *= mix(vec3(0.95, 0.92, 0.86), vec3(0.86, 0.84, 0.8), h21(cell)) * (1.0 - joint * 0.55);
+              vec3 mA = tri(vW + vec3(cell.x * 7.3, cell.y * 3.1, 0.0), n, 2.2); float lA = dot(mA, vec3(0.333));
+              float grain = dot(tri(vW * 1.0 + vec3(cell.y * 1.7, 0.0, cell.x * 2.3), n, 0.42), vec3(0.333)), fine = dot(tri(vW, n, 0.13), vec3(0.333));
+              // calm white marble: a soft vein from the coarse stone, a tooth of fine grain, never the blotches
+              alb = vec3(0.90, 0.885, 0.85) * (0.9 + 0.28 * (lA - 0.55) + 0.16 * (grain - 0.55) + 0.10 * (fine - 0.55));
+              alb *= mix(vec3(0.97, 0.96, 0.93), vec3(0.91, 0.9, 0.88), h21(cell)) * (1.0 - joint * 0.5);
               gloss = 0.07;
             #endif
           }
