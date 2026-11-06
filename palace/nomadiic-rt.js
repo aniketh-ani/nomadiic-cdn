@@ -4390,7 +4390,8 @@ void main(){
     float k = vKind + 0.5; vec3 c;
     if (k > 4.0 && k < 5.0 && distance(vW.xy, vec2(-7.0, 5.75)) < 0.82 && vW.z > -12.48) k = 2.5;   // the disc under the gauges: embossed enamel, not brass (in brass it read as a face)
     vec3 grain = tri(vW, n, 4.0);
-    if (k < 1.0)       c = vec3(0.95, 0.90, 0.83) * mix(vec3(1.0), grain * 1.08, 0.35) * L;                       // lime plaster
+    // small end faces that got no light in the bake must not show as dark squares and steps in the bright plaster
+    if (k < 1.0)       c = vec3(0.95, 0.90, 0.83) * mix(vec3(1.0), grain * 1.08, 0.35) * max(L, vec3(0.62, 0.58, 0.52));                       // lime plaster
     else if (k < 2.0) { vec3 a = vec3(0.17, 0.035, 0.04) * mix(vec3(1.0), grain, 0.25);                            // oxblood polished floor
                         c = a * L + env(R, 1.2) * (0.02 + 0.35 * fres) * 0.7; }
     else if (k < 3.0) { c = vec3(0.42, 0.05, 0.06) * L + env(R, 1.5) * (0.04 + 0.6 * fres); }                     // oxblood enamel, lacquered
